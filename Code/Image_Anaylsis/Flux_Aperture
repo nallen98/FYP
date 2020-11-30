@@ -1,0 +1,169 @@
+import numpy as np
+from astropy.io import fits
+import matplotlib.pyplot as plt
+from matplotlib import patches, colors
+import numpy.ma as ma
+from photutils import detect_sources, source_properties, CircularAperture, aperture_photometry, SourceProperties, EllipticalAperture
+from astropy.visualization.mpl_normalize import ImageNormalize
+from photutils.utils import make_random_cmap
+from astropy.visualization import SqrtStretch
+from random import randrange
+import matplotlib.gridspec as gridspec
+
+#Different Radii
+combined_sci = np.load('detection_sci.npy')
+combined_wht = np.load('detection_wht.npy')
+
+####Make the segmentation image:
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+np.save('segm_img.npy',segm)
+# The segmentation image has the same dimensions as the input image. Each pixel in the segmentation image has an integer value. If $p_{i,j}=0$ this means that pixel isn't associated with a source. If $p_{i,j}>0$ that pixel is part of an object. Using imshow on the segmentation map will automatically colour each image by a different colour.
+# plt.imshow(segm) # plot all pixels and scale between significance = -threshold to threshold
+# plt.show()
+
+
+####Taking the Signal and Noise for a range of apertures (1-20)
+combined_noisesq = combined_noise**2
+cat = source_properties(combined_sci, segm)
+
+positions = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    
+radii = np.linspace(1,20,20)
+
+apertures = [CircularAperture(positions, r=r) for r in radii]
+
+phot_table_err = aperture_photometry(combined_noisesq, apertures)
+phot_table_flu = aperture_photometry(combined_sci, apertures)
+#print(phot_table_flu)
+r_SNR = np.zeros((len(phot_table_flu['aperture_sum_0']),20))
+
+for i in range(20):
+        r_SNR[:,i] = phot_table_flu['aperture_sum_'+str(i)]/phot_table_err['aperture_sum_'+str(i)]
+print(r_SNR)
+
+
+####Selecting 100 random sources and plotting their SNR against r (in range(1,20))
+
+radii = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+for i in range(100):
+    x = randrange(1,4426)
+    SNR = []
+#     for i in range(len(r_SNR)):
+    for r in range(20):
+        SNR.append(r_SNR[x,r])
+    plt.scatter(radii,SNR, marker = '.')
+    plt.title('Galaxy '+str(x)+ ' SNR vs r')
+    plt.xlabel('r (pixels)')
+    plt.ylabel('SNR')
+    plt.savefig('../../galaxy_SNR_r_plots/SNR_r_source_'+str(x))
+    plt.close()
+
+#### Finding the Optimine Radius (The radius that gives the largest SNR)
+max_SNR = np.max(r_SNR, axis = 1)
+opt_r = np.argmax(r_SNR, axis = 1) + 1
+sma_max_SNR = np.zeros(len(max_SNR))
+sma_opt_r = np.zeros(len(max_SNR))
+
+for i in range(len(opt_r)):
+    r = opt_r[i]
+    sma = round(semi_major_axis[i])
+    if sma > 19:
+        sma_max_SNR[i] = max_SNR[i]
+        sma_opt_r[i] = opt_r[i]
+        continue
+    if r < sma: #rounding because i have a range of integers. 
+        sma_max_SNR[i] =  np.max(r_SNR[i,(sma-1):19])
+        #Note, you are starting the new array at what ever (sma - 1) is. You'll need to add it back on because python
+        #will start counting at 0 again. for example r_SNR[0,4:18]. You're starting at r = 4 but python counts it as 0.
+        #Therefore you need to add the (sma-1) back on.
+        sma_opt_r[i] =  np.argmax(r_SNR[i,(sma-1):19])+ sma #would be np.max() + 1 + (sma-1)
+    else:
+        sma_max_SNR[i] = max_SNR[i]
+        sma_opt_r[i] = opt_r[i]
+        
+#### PLoting this optimn radius as a histogram         
+fig, (ax1,ax2) = plt.subplots(1,2, figsize = (10,5))
+ax1.hist(opt_r, 15)
+ax1.set_xlabel('r (pixels)')
+ax1.set_title('Before applying semi-major axis')
+ax2.hist(sma_opt_r,15)
+ax2.set_title('After applying semi-major axis')
+ax2.set_xlabel('r (pixels)')
+plt.savefig('../before_after_sma.png')
+
+
+####Isophotal Radius Size 
+unique, counts = np.unique(segm.data, return_counts=True)
+counts = counts[1:len(counts)] # counts[0] is the backround
+
+#Then using A = pi*(r^2), where A in the total number of pixels in the source (N_pix), to find r --> r = sqrt(A/pi)
+
+def radius(A):
+    return np.sqrt(A/np.pi)
+
+#Noting the radius to be the isophotal size
+iso_r = radius(counts)
+print(iso_r)
+plt.plot(iso_r, opt_r, '.')
+plt.xlabel('Isophotal Size (pixels)')
+plt.ylabel('Optimum SNR Size (pixels)')
+plt.title('Comparing Optiumum SNR Radii Size to Sources Isophotal Size')
+plt.savefig('../optR_isoR_plot.png')
+
+
+####Comparing Semi-Major Axis of Each Source to the Isophotal Size of the Source
+x = np.linspace(0,100,1000)
+y = x
+plt.plot(x,y, '--')
+plt.plot(iso_r, semi_major_axis, '.')
+plt.xlabel('Isophotal Size (pixels)')
+plt.ylabel('Semi_major_axis (pixels)')
+plt.xlim(0,90)
+plt.ylim(0,175)
+plt.title('Comparing Semi-Major Axis of Each Source to the Isophotal Size of the Source')
+plt.savefig('../smaR_isoR_plot.png')
+
+
+####Array containing all of the source's fluxes
+flux = np.zeros((len(phot_table_flu['aperture_sum_0']),20))
+
+for i in range(20):
+        flux[:,i] = phot_table_flu['aperture_sum_'+str(i)]
+        
+        
+        
+#####################################################################################        
+sci_cutout = combined_sci[y[20]-20:y[20]+20, x[20]-20:x[20]+20]
+wht_cutout = combined_wht[y[20]-20:y[20]+20, x[20]-20:x[20]+20]
+noise_cutout = 1./np.sqrt(wht_cutout)
+sig_cutout = sci_cutout/noise_cutout
+v_max = 5
+im = plt.imshow(sig_cutout, cmap = 'Spectral', vmin = -v_max, vmax = v_max )
+plt.colorbar()
+plt.axis('off')
+plt.show()
+
+#applying a arcsinh scaling to the image
+fig, (ax1, ax2) = plt.subplots(1,2, figsize = (10,5))
+f = []
+for r in range(20):
+    f.append(flux[20,r])
+sci_cutout = combined_sci[y[20]-20:y[20]+20, x[20]-20:x[20]+20]
+wht_cutout = combined_wht[y[20]-20:y[20]+20, x[20]-20:x[20]+20]
+noise_cutout = 1./np.sqrt(wht_cutout)
+sig_cutout = sci_cutout/noise_cutout
+v_max = 3
+ax1.scatter(radii, f, marker = '.')
+im = ax2.imshow(np.arcsinh(sig_cutout), cmap = 'Spectral', vmin = -v_max, vmax = v_max)
+cax2 = ax2.inset_axes([0.05, 0.9, 0.4, 0.03])
+cbar2 = fig.colorbar(im, cax = cax2, orientation="horizontal")
+plt.axis('off')
+plt.show()
