@@ -1,0 +1,90 @@
+import numpy as np
+from random import randint
+from astropy import units as u
+from astropy.io import fits
+import matplotlib.pyplot as plt
+from photutils import detect_sources, source_properties, deblend_sources, CircularAperture, aperture_photometry, SourceProperties, EllipticalAperture
+from astropy.visualization.mpl_normalize import ImageNormalize
+
+combined_sci = np.load('detection_sci.npy')
+combined_wht = np.load('detection_wht.npy')
+
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+
+cat = source_properties(combined_sci, segm)
+positions = []
+y = []
+x = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    x.append(round(obj.xcentroid.value))
+    y.append(round(obj.ycentroid.value))
+for s in range(50):
+    
+    j = randint(0,4426)
+
+    mask = ~((segm.data==j+1)|(segm.data==0)) 
+    masked_sci = np.ma.array(combined_sci, mask = mask)
+    masked_wht = np.ma.array(combined_wht, mask = mask)
+    masked_noise = 1/np.sqrt(masked_wht)  
+    masked_noisesq = masked_noise**2
+
+    radii = np.arange(1,21,1)
+    apertures = [CircularAperture(positions[j], r=r) for r in radii]
+
+    #unmasked total flux
+    unmasked_signal = aperture_photometry(combined_sci, apertures)
+    unmasked_flux = np.zeros((20))
+
+    #masked total flux
+    masked_signal = aperture_photometry(masked_sci, apertures)
+    masked_flux = np.zeros((20)) 
+    for i in range(20):
+        unmasked_flux[i] = unmasked_signal['aperture_sum_'+str(i)]
+        masked_flux[i] = masked_signal['aperture_sum_'+str(i)]
+
+    sci_cutout = combined_sci[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    # segm_cutout = segm.data[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    wht_cutout = combined_wht[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    noise_cutout = 1./np.sqrt(wht_cutout)
+    unmasked_sig_cutout = sci_cutout/noise_cutout
+
+    masked_sci_cutout = masked_sci[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    # masked_segm_cutout = segm.data[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    masked_wht_cutout = masked_wht[y[j]-20:y[j]+20, x[j]-20:x[j]+20]
+    masked_noise_cutout = 1./np.sqrt(masked_wht_cutout)
+    masked_sig_cutout = masked_sci_cutout/masked_noise_cutout
+
+    r = np.arange(1,21) 
+    #v_max = 5 
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize = (10,5))
+    ax1.plot(r, unmasked_flux, 'o')
+    ax1.set_ylabel('Arbitrary flux')
+    ax1.set_xlabel('Radius (pixels)')
+
+    im1 = ax2.imshow(unmasked_sig_cutout, cmap = 'Spectral', vmin = -v_max, vmax = v_max)
+    cax2 = ax2.inset_axes([0.05, 0.9, 0.4, 0.03])
+    cbar2 = fig.colorbar(im1, cax = cax2, orientation="horizontal")
+    plt.suptitle('Unmasked Source '+str(j+1))
+    ax2.axis('off')
+    plt.savefig('flux_r_plots/Unmasked/source'+str(j+1))
+    # plt.show()
+
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize = (10,5))
+    ax1.plot(r, masked_flux, 'o')
+    ax1.set_ylabel('Arbitrary flux')
+    ax1.set_xlabel('Radius (pixels)')
+
+    im2 = ax2.imshow(masked_sig_cutout, cmap = 'Spectral', vmin = -v_max, vmax = v_max)
+    cax2 = ax2.inset_axes([0.05, 0.9, 0.4, 0.03])
+    cbar2 = fig.colorbar(im2, cax = cax2, orientation="horizontal")
+    ax2.axis('off')
+    plt.suptitle('Masked Source '+str(j+1))
+    plt.savefig('flux_r_plots/Masked/source'+str(j+1))
+    # plt.show()
