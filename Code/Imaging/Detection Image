@@ -1,0 +1,23 @@
+#Creating Science and Weigt Detection Images Used for Analysis.
+
+image_dir = '../../data' # define image directory relative to this script
+im_sci = {}
+im_wht = {}
+filters = ['f105w', 'f125w', 'f140w', 'f160w']
+for f in filters:
+    sci = fits.getdata(f'{image_dir}/{f}_sci.fits') #some reason the mask makes the data chnage so there is no mask applied
+    wht = fits.getdata(f'{image_dir}/{f}_wht.fits') 
+    im_sci[f] = sci
+    im_wht[f] = wht
+
+shape = next(iter(im_sci.values())).shape
+combined_sci = np.zeros(shape)
+combined_wht = np.zeros(shape)
+for f in filters:
+    combined_sci += im_sci[f]*im_wht[f]
+    combined_wht += im_wht[f]
+    
+combined_sci /= combined_wht
+
+np.save('detection_sci.npy', combined_sci)
+np.save('detection_wht.npy', combined_wht)
