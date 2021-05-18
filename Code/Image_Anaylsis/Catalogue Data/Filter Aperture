@@ -1,0 +1,69 @@
+import numpy as np
+from astropy.io import fits
+from photutils import detect_sources, source_properties, CircularAperture, aperture_photometry
+
+
+
+combined_sci = np.load('detection_sci.npy')
+combined_wht = np.load('detection_wht.npy')
+
+#make segmentaion map
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+
+cat = source_properties(combined_sci, segm)
+positions = []
+y = []
+x = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    x.append(round(obj.xcentroid.value))
+    y.append(round(obj.ycentroid.value))
+
+
+###### Aperture data collection
+
+#Find the flux of each source in each filter
+image_dir = '../../data'
+all_filters = ['f105w', 'f125w','f140w','f160w','f435w','f606w', 'f775w','f814w','f850lp']
+
+aper = {}
+
+cat = source_properties(combined_sci, segm)
+positions = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    
+for f in all_filters:
+    print(f)
+    filter_flux = np.zeros((len(cat),20))
+    filter_noise = np.zeros((len(cat),20))
+    filter_sn = np.zeros((len(cat),20))
+    sci = fits.getdata(f'{image_dir}/{f}_sci.fits')
+    wht = fits.getdata(f'{image_dir}/{f}_wht.fits')
+    for j in range(len(cat)):
+        print(j)
+        mask = ~((segm.data==j+1)|(segm.data==0))
+        masked_sci = np.ma.array(sci, mask = mask)
+        masked_wht = np.ma.array(wht, mask = mask)
+
+        masked_noise = 1/np.sqrt(masked_wht)  
+        masked_noisesq = masked_noise**2
+
+        radii = np.arange(1,21,1)
+        apertures = [CircularAperture(positions[j], r=r) for r in radii]
+
+        aper_noise = aperture_photometry(masked_noisesq, apertures)
+        aper_flux = aperture_photometry(masked_sci, apertures)
+        
+        for i in range(20):
+            filter_flux[j,i] = aper_flux['aperture_sum_'+str(i)]
+            filter_noise[j,i] = np.sqrt(aper_noise['aperture_sum_'+str(i)])
+            filter_sn[j,i] = aper_flux['aperture_sum_'+str(i)]/(np.sqrt(aper_noise['aperture_sum_'+str(i)]))
+    aper[f+'_signal'] = filter_flux
+    aper[f+'_noise'] = filter_noise
+    aper[f+'_sn'] = filter_sn
