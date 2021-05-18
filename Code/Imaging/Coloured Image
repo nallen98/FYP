@@ -1,0 +1,72 @@
+f1 = ['f435w','f606w']
+f2 =['f775w', 'f850lp']
+f3 =['f105w','f125w','f140w','f160w']
+
+f_RGB = {'R': ['f435w','f606w'], 'G': ['f775w', 'f850lp'], 'B': ['f105w','f125w','f140w','f160w']}
+
+# --- combine (stack) a list of images together
+
+image_dir = '../../data/original' # image directory relative to this script
+
+mask = fits.getdata(f'{image_dir}/mask.fits') # read in the image mask
+
+f1 = ['f435w','f606w']
+f2 =['f775w', 'f850lp']
+f3 =['f105w','f125w','f140w','f160w']
+
+sci_1 = {f: fits.getdata(f'{image_dir}/{f}_sci.fits') for f in f1} # read sci images
+wht_1 = {f: fits.getdata(f'{image_dir}/{f}_wht.fits') for f in f1} # read weight images
+sci_2 = {f: fits.getdata(f'{image_dir}/{f}_sci.fits') for f in f2} # read sci images
+wht_2 = {f: fits.getdata(f'{image_dir}/{f}_wht.fits') for f in f2} # read weight images
+sci_3 = {f: fits.getdata(f'{image_dir}/{f}_sci.fits') for f in f3} # read sci images
+wht_3 = {f: fits.getdata(f'{image_dir}/{f}_wht.fits') for f in f3} # read weight images
+
+shape_1 = next(iter(sci_1.values())).shape
+shape_2 = next(iter(sci_2.values())).shape
+shape_3 = next(iter(sci_3.values())).shape
+combined_sci_1 = np.zeros(shape_1)
+combined_sci_2 = np.zeros(shape_2)
+combined_sci_3 = np.zeros(shape_3)
+combined_wht_1 = np.zeros(shape_1)
+combined_wht_2 = np.zeros(shape_2)
+combined_wht_3 = np.zeros(shape_3)
+
+for f in f1:
+    combined_sci_1 += sci_1[f]
+    combined_wht_1 += wht_1[f]
+    
+for f in f2:
+    combined_sci_2 += sci_2[f] 
+    combined_wht_2 += wht_2[f]
+    
+for f in f3:
+    combined_sci_3 += sci_3[f] 
+    combined_wht_3 += wht_3[f]
+
+im = {}
+f_RGB = {'R': combined_sci_3, 'G': combined_sci_2, 'B': combined_sci_1} # define the images corresponding to the RGB channels
+for channel in 'RGB':
+
+    f_RGB[channel] = np.ma.masked_array(f_RGB[channel], mask = mask) # apply the mask to our image
+
+    # --- clip negative and erroneously high values and rescale values to be 0 - 1
+    # --- NOTE: you can play around here to change the colour balance and contrast of your images
+    vmin = 0 # exclude negative values (anything less than vmin gets mapped to vmin)
+    vmax =  np.percentile(f_RGB[channel][~np.isnan(f_RGB[channel])], 99) # exclude the brightest 1% of pixels (anything above gets mapped to that value)
+    norm = cm.colors.Normalize(vmin, vmax) # normalisation function
+    f_RGB[channel] = norm(f_RGB[channel]) # apply normalisation function
+
+    # --- set masked values to zero
+    im[channel] = np.ma.filled(f_RGB[channel], 0.0) # return masked array with masked values set to 0.0 (this makes those pixels black)
+
+rgb = np.dstack((im['R'],im['G'],im['B'])) # stack images into a single array
+
+# --- make image and show
+
+dpi = rgb.shape[0] # set dots per inch equal to the number of pixels.
+fig = plt.figure(figsize = (1, 1), dpi = dpi)
+ax = fig.add_axes((0.0, 0.0, 1.0, 1.0)) # define axes to cover entire field
+ax.axis('off') # turn off axes frame, ticks, and labels
+
+ax.imshow(rgb) # shouldn't see much because the scale is dominated by outlier pixels
+fig.savefig('XDF_rgb.png')
