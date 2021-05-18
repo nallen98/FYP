@@ -1,0 +1,31 @@
+import h5py
+
+#Creates hdf5 file to store data in and form a catalogue
+
+hdf = h5py.File('first_catalogue.hdf5', "w")
+phot = hdf.create_group('photometry')
+coord = phot.create_group('coordinates')
+combined = phot.create_group('combined')
+aperture = phot.create_group('aper')
+isophotal = phot.create_group('iso')
+
+for f in all_filters:
+    filt = aperture.create_group(f)
+    filt.create_dataset('flux',data=aper[f+'_signal'])
+    filt.create_dataset('noise',data=aper[f+'_noise'])
+    filt.create_dataset('S/N',data=aper[f+'_sn'])
+    
+    filt = isophotal.create_group(f)
+    filt.create_dataset('flux',data=(iso[f+'_signal']))
+    filt.create_dataset('noise',data=(iso[f+'_noise']))
+    filt.create_dataset('S/N',data=(iso[f+'_sn']))
+
+coord.create_dataset('x', data = x)
+coord.create_dataset('y', data = y)
+combined.create_dataset('flux', data = (total_flux))
+combined.create_dataset('noise', data = (total_noise))
+combined.create_dataset('S/N', data = (total_sn))
+isophotal.create_dataset('source_radii', data = iso_r)
+aperture.create_dataset('source_radii', data = aper_r)
+
+hdf.close()
