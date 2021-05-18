@@ -1,0 +1,12 @@
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+
+# The segmentation image has the same dimensions as the input image. Each pixel in the segmentation image has an integer value. If $p_{i,j}=0$ this means that pixel isn't associated with a source. If $p_{i,j}>0$ that pixel is part of an object. Using imshow on the segmentation map will automatically colour each image by a different colour.
+plt.imshow(segm) # plot all pixels and scale between significance = -threshold to threshold
+plt.axis('off')
+plt.savefig('fullHUDFsegm.png')
