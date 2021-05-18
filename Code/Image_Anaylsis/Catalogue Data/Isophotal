@@ -1,0 +1,45 @@
+import numpy as np
+from photutils import detect_sources
+
+combined_sci = np.load('detection_sci.npy')
+combined_wht = np.load('detection_wht.npy')
+
+#make segmentaion map
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+
+#Iso data collection
+#Flux and noise
+image_dir = '../../data'
+all_filters = ['f105w', 'f125w','f140w','f160w','f435w','f606w', 'f775w', 'f814w', 'f850lp']
+iso = {}
+
+for f in all_filters:
+    sci = fits.getdata(f'{image_dir}/{f}_sci.fits')
+    signal = np.array([np.sum(sci[np.where(segm.data == i+1)]) for i in range(segm.nlabels)]) #i=0 is the background. Sources are all i>0.
+    iso[f+'_signal'] = signal
+    
+    wht = fits.getdata(f'{image_dir}/{f}_wht.fits')
+    noise = 1./np.sqrt(wht) 
+    error = np.array([np.sqrt(np.sum(noise[np.where(segm.data == i+1)]**2)) for i in range(segm.nlabels)])#i=0 is the background. Sources are all i>0 (this is the same as applying a mask).
+    iso[f+'_noise'] = error
+    
+    iso[f+'_sn'] = signal/error
+#Estimated radius
+unique, counts = np.unique(segm.data, return_counts=True)
+counts = counts[1:len(counts)] #ignore background which is at i = 0 in counts array/list.
+
+#Then using A = pi*(r^2), where A in the total number of pixels in the source (N_pix), to find r --> r = sqrt(A/pi)
+def radius(A):
+    return np.sqrt(A/np.pi)
+
+#Noting the radius to be the isophotal size
+iso_r = radius(counts)
+
+with open('iso_cat_data.pck', 'wb') as file:
+    pickle.dump(iso, file)
+np.save('iso_r.npy', iso_r)
