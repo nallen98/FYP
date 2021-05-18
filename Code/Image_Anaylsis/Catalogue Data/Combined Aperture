@@ -1,0 +1,64 @@
+import numpy as np
+from astropy.io import fits
+from photutils import detect_sources, source_properties, CircularAperture, aperture_photometry
+import pickle
+
+combined_sci = np.load('detection_sci.npy')
+combined_wht = np.load('detection_wht.npy')
+
+#make segmentaion map
+combined_noise = 1./np.sqrt(combined_wht) 
+combined_sig = combined_sci/combined_noise
+threshold = 2.5 
+npixels = 5 
+
+segm = detect_sources(combined_sig, threshold, npixels=npixels) # make segmentation image
+
+cat = source_properties(combined_sci, segm)
+positions = []
+y = []
+x = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    x.append(round(obj.xcentroid.value))
+    y.append(round(obj.ycentroid.value))
+    
+#Combined data extraction
+
+cat = source_properties(combined_sci, segm)
+
+total_flux = np.zeros((len(cat), 20))
+total_noise = np.zeros((len(cat), 20))
+total_sn = np.zeros((len(cat), 20))
+aper_r = np.zeros((len(cat)))
+
+positions = []
+y = []
+x = []
+for obj in cat:
+    positions.append(np.transpose((obj.xcentroid.value, obj.ycentroid.value)))
+    x.append(round(obj.xcentroid.value))
+    y.append(round(obj.ycentroid.value))
+    
+for j in range(len(cat)):
+    mask = ~((segm.data==j+1)|(segm.data==0)) 
+    masked_sci = np.ma.array(combined_sci, mask = mask)
+    masked_wht = np.ma.array(combined_wht, mask = mask)
+    masked_noise = 1/np.sqrt(masked_wht)  
+    masked_noisesq = masked_noise**2
+
+    radii = np.arange(1,21,1)
+    apertures = [CircularAperture(positions[j], r=r) for r in radii]
+
+    noise = aperture_photometry(masked_noisesq, apertures)
+    signal = aperture_photometry(masked_sci, apertures)
+    
+    sn = np.zeros((20))
+    for i in range(20):
+        total_flux[j,i] = signal['aperture_sum_'+str(i)]
+        total_noise[j,i] = np.sqrt(noise['aperture_sum_'+str(i)])
+        total_sn[j,i] = signal['aperture_sum_'+str(i)]/(np.sqrt(noise['aperture_sum_'+str(i)]))
+        sn[i] = signal['aperture_sum_'+str(i)]/(np.sqrt(noise['aperture_sum_'+str(i)]))
+    #The aper radius is found from the maxiumm signal to noise value. The index of this max value is the optimm radius - 1
+    #as the radii vary from 1 to 20 not 0 to 20.
+    aper_r[j] = np.argmax(sn) + 1
