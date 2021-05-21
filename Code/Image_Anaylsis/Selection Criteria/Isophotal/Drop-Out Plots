@@ -1,0 +1,62 @@
+#Thumbnail Images 
+x = hdf['photometry']['coordinates']['x'][:]
+y = hdf['photometry']['coordinates']['y'][:]
+    
+z4_x = x[z4_selection]
+z4_y = y[z4_selection]
+
+z6_x = x[z6_selection]
+z6_y = y[z6_selection]
+
+z8_x = x[z8_selection]
+z8_y = y[z8_selection]
+
+######## z=4 
+image_dir = '../../data'
+filters = ['f435w', 'f606w', 'f775w', 'f814w', 'f105w', 'f125w', 'f140w', 'f160w']
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for i in range(10):
+    j = randrange(0, len(z4_x))
+    x = int(z4_x[j])
+    y = int(z4_y[j])
+    for f, ax in zip(filters, axes):
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10] 
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        sn = sci/noise
+        ax.imshow(sn, cmap = 'Spectral', vmin = -3, vmax= 3)
+        ax.set_title(f)
+        plt.savefig('selection_cutouts/sn/iso/z4/source_'+str(j)+'.png', bbox_inches = 'tight', pad_inches = 0.1)
+        
+####### z = 6
+
+image_dir = '../../data'
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for j in range(len(z6_x)):
+    x = int(z6_x[j])
+    y = int(z6_y[j])
+    for f, ax in zip(filters, axes):
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10] 
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        sn = sci/noise
+        ax.imshow(sn, cmap = 'Spectral', vmin = -3, vmax= 3)
+        ax.set_title(f)
+        plt.savefig('selection_cutouts/sn/iso/z6/source_'+str(j)+'.png', bbox_inches = 'tight', pad_inches = 0.1)
+
+####### z = 8
+
+image_dir = '../../data'
+
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for j in range(len(z8_x)):
+    x = int(z8_x[j])
+    y = int(z8_y[j])
+    for f, ax in zip(filters, axes):
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10] 
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        sn = sci/noise
+        ax.imshow(sn, cmap = 'Spectral', vmin = -3, vmax= 3)
+        ax.set_title(f)
+        plt.savefig('selection_cutouts/sn/iso/z8/source_'+str(j)+'.png', bbox_inches = 'tight', pad_inches = 0.1)
