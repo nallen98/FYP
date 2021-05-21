@@ -1,0 +1,34 @@
+######Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 4 
+
+z4_flux = iso_dic['f125w'][z4_selection]
+plt.hist(z4_flux, bins = 15, edgecolor = 'k' )
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 4 Selection')
+plt.grid()
+plt.savefig('selection_histograms/z4')
+
+
+######Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 6
+
+z6_flux = iso_dic['f125w'][z6_selection]
+plt.hist(z6_flux, bins = 15, edgecolor = 'k' )
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 6 Selection')
+plt.grid()
+plt.savefig('selection_histograms/z6')
+
+#######Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 8
+
+z8_flux = iso_dic['f125w'][z8_selection]
+plt.hist(z8_flux, bins = 20, edgecolor = 'k')
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 8 Selection')
+plt.grid()
+plt.savefig('selection_histograms/z8')
+
+
+
+
