@@ -1,0 +1,76 @@
+#### z = 4
+
+im_combined = {}
+image_dir = '../../data'
+im = fits.getdata('../../data/f105w_sci.fits')[int(z4_y[0])-10:int(z4_y[0])+10, int(z4_x[0])-10:int(z4_x[0])+10]
+shape = im.shape
+
+for f in all_filters:
+    combined = np.zeros(shape)
+    combined_n = np.zeros(shape)
+    for j in range(len(z4_x)):
+        x = int(z4_x[j])
+        y = int(z4_y[j])
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10]
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        combined += sci
+        combined_n += noise
+    im_combined[f+'_signal'] = combined
+    im_combined[f+'_noise'] = combined_n
+    
+filters = ['f435w', 'f606w', 'f775w', 'f814w', 'f105w', 'f125w', 'f140w', 'f160w']
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for f, ax in zip(filters, axes):
+    sn = im_combined[f+'_signal']/im_combined[f+'_noise']
+    ax.imshow(sn, cmap = 'Spectral', vmin = -3, vmax = 3)
+    ax.set_title(f)
+plt.savefig('selection_cutouts/sn/aper/stacked_z4.png', bbox_inches = 'tight', pad_inches = 0)
+    
+#### z = 6
+
+z6_combined = {}
+for f in all_filters:
+    combined = np.zeros(shape)
+    combined_n = np.zeros(shape)
+    for j in range(len(z6_x)):
+        x = int(z6_x[j])
+        y = int(z6_y[j])
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10]
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        combined += sci
+        combined_n += noise
+    z6_combined[f] = combined/combined_n
+    
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for f, ax in zip(filters, axes):
+    ax.imshow(z6_combined[f], cmap = 'Spectral', vmin = -3, vmax= 3)
+    ax.set_title(f)
+plt.savefig('selection_cutouts/sn/aper/stacked_z6.png', bbox_inches = 'tight', pad_inches = 0)
+
+#### z = 8
+
+z8_combined = {}
+for f in all_filters:
+    combined = np.zeros(shape)
+    combined_n = np.zeros(shape)
+    for j in range(len(z8_x)):
+        x = int(z8_x[j])
+        y = int(z8_y[j])
+        sci = fits.getdata(f'{image_dir}/{f}_sci.fits')[y-10:y+10, x-10:x+10]
+        wht = fits.getdata(f'{image_dir}/{f}_wht.fits')[y-10:y+10, x-10:x+10]
+        noise = 1/np.sqrt(wht)
+        combined += sci
+        combined_n += noise
+    z8_combined[f] = combined/combined_n
+    
+fig, axes = plt.subplots(1, 8, figsize=(20,20))
+for f, ax in zip(filters, axes):
+    ax.imshow(z8_combined[f], cmap = 'Spectral', vmin = -3, vmax = 3)
+    ax.set_title(f)
+plt.savefig('selection_cutouts/sn/aper/stacked_z8.png', bbox_inches = 'tight', pad_inches = 0)
+
+
+    
+    
