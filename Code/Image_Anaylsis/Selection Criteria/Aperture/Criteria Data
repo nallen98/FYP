@@ -1,0 +1,97 @@
+#Making Colours
+def colour(f_A,f_B):
+    return -2.5*np.log10(f_A/f_B)
+
+aper_V_IZ = np.zeros(len(aper_flux['f775w'])) 
+aper_IZ_Y = np.zeros(len(aper_flux['f775w'])) 
+aper_Y_J = np.zeros(len(aper_flux['f775w'])) 
+aper_J_H = np.zeros(len(aper_flux['f775w'])) 
+
+
+for i in range(len(aper_flux['f775w'])):
+    aper_V_IZ[i] = colour(aper_flux['f606w'][i],aper_flux['f814w'][i])
+    aper_IZ_Y[i] = colour(aper_flux['f814w'][i], aper_flux['f105w'][i])
+    aper_Y_J[i] = colour(aper_flux['f105w'][i], aper_flux['f125w'][i])
+    aper_J_H[i] = colour(aper_flux['f125w'][i], aper_flux['f160w'][i])
+    
+aper_SN_B = aper_sn['f435w'][:]
+aper_SN_V = aper_sn['f606w'][:]
+aper_SN_IZ = aper_sn['f814w'][:]
+aper_SN_Y = aper_sn['f105w'][:]
+aper_SN_J = aper_sn['f125w'][:]
+aper_SN_H = aper_sn['f160w'][:]
+
+#####Linear Criteria Functions 
+m1 = (1.5 - 1)/0.5
+m2 = (1.7-1.2)/0.5
+m3 = (1.5-1)/0.25
+
+c1 = 1
+c2 = 1.2
+c3 = 1
+
+def y1(x):
+    return m1*x + c1
+
+def y2(x):
+    return m2*x + c2
+
+def y3(x):
+    return m3*x + c3
+    
+####Making Criteria
+
+aper_z4 = {}
+aper_SN7Y = {}
+z4_selection = (aper_SN_B<1.5)&(aper_SN_IZ>7)&(aper_SN_Y>7)&(aper_V_IZ>1)&(aper_IZ_Y<0.5)&(y1(aper_IZ_Y)<aper_V_IZ)
+
+#z4 selection
+aper_z4['V_IZ'] = aper_V_IZ[z4_selection]
+aper_z4['IZ_Y'] = aper_IZ_Y[z4_selection]
+aper_z4['Y_J'] = aper_Y_J[z4_selection]
+aper_z4['J_H'] = aper_J_H[z4_selection]
+
+#z4 s/n selection
+# z4['sn_V_IZ'] = SN_IZ[z4_selection]
+aper_z4['sn_Y'] = aper_SN_Y[z4_selection]
+aper_z4['sn_J'] = aper_SN_J[z4_selection]
+aper_z4['sn_H'] = aper_SN_H[z4_selection]
+
+#Points with jt Y S/N > 7
+aper_SN7Y['V_IZ'] = aper_V_IZ[(aper_SN_Y>7)]
+aper_SN7Y['IZ_Y'] = aper_IZ_Y[(aper_SN_Y>7)]
+aper_SN7Y['Y_J'] = aper_Y_J[(aper_SN_Y>7)]
+aper_SN7Y['J_H'] = aper_J_H[(aper_SN_Y>7)]
+
+#z6 selection
+aper_z6 = {}
+z6_selection = (aper_SN_B<1.5)&(aper_SN_V<1.5)&(aper_SN_J>7)&(aper_Y_J<0.5)&(aper_IZ_Y>1.2)&(y2(aper_Y_J)<aper_IZ_Y)#&(SN_Y>7)$(SN_IZ<1.5)
+aper_z6['V_IZ'] = aper_V_IZ[z6_selection]
+aper_z6['IZ_Y'] = aper_IZ_Y[z6_selection]
+aper_z6['Y_J'] = aper_Y_J[z6_selection]
+aper_z6['J_H'] = aper_J_H[z6_selection]
+
+#z6 s/n selection
+# z6['sn_V_IZ'] = SN_IZ[z6_selection]
+aper_z6['sn_Y'] = aper_SN_Y[z6_selection]
+aper_z6['sn_J'] = aper_SN_J[z6_selection]
+aper_z6['sn_H'] = aper_SN_H[z6_selection]
+
+#z8 selection
+aper_z8 = {}
+z8_selection = (aper_SN_B<1.5)&(aper_SN_V<1.5)&(aper_SN_IZ<1.5)&(aper_SN_H>7)&(aper_Y_J>1)&(aper_J_H<0.5)&(y3(aper_J_H)<aper_Y_J)
+aper_z8['V_IZ'] = aper_V_IZ[z8_selection]
+aper_z8['IZ_Y'] = aper_IZ_Y[z8_selection]
+aper_z8['Y_J'] = aper_Y_J[z8_selection]
+aper_z8['J_H'] = aper_J_H[z8_selection]
+
+#z8 s/n selection
+# z8['sn_V_IZ'] = SN_IZ[z8_selection]
+aper_z8['sn_Y'] = aper_SN_Y[z8_selection]
+aper_z8['sn_J'] = aper_SN_J[z8_selection]
+aper_z8['sn_H'] = aper_SN_H[z8_selection]
+
+####Number of Candidates
+print('Number of z4 candidates:'+ str(len(aper_z4['V_IZ'])))
+print('Number of z6 candidates:'+ str(len(aper_z6['V_IZ'])))
+print('Number of z8 candidates:'+ str(len(aper_z8['V_IZ'])))
