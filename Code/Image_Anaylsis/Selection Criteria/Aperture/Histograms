@@ -1,0 +1,29 @@
+#Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 4 
+
+z4_flux = aper_flux['f125w'][z4_selection]
+plt.hist(z4_flux, bins = 15, edgecolor = 'k' )
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 4 Selection')
+plt.grid()
+plt.savefig('selection_histograms/aper_z4.png', bbox_inches = 'tight', pad_inches = 0)
+
+#Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 6 
+
+z6_flux = aper_flux['f125w'][z6_selection]
+plt.hist(z6_flux, bins = 15, edgecolor = 'k' )
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 6 Selection')
+plt.grid()
+plt.savefig('selection_histograms/aper_z6.png', bbox_inches = 'tight', pad_inches = 0)
+
+#Flux Histogram of Selection for each redhsift in the J band - f125w
+#redshift 8 
+
+z8_flux = aper_flux['f125w'][z8_selection]
+plt.hist(z8_flux, bins = 15, edgecolor = 'k' )
+plt.xlabel(r'$J_{f125w} (nJy)$')
+plt.title('Flux Histogram of z = 8 Selection')
+plt.grid()
+plt.savefig('selection_histograms/aper_z8.png', bbox_inches = 'tight', pad_inches = 0)
