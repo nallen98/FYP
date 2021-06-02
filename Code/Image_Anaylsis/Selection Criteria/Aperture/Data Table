@@ -1,0 +1,52 @@
+####z = 4
+
+nJy_to_es = {'f435w': 0.005171303179169625, 'f606w': 0.011015393095414123, 'f775w': 0.005142804319487919, 'f814w': 0.0066619290022345385, 'f850lp': 0.0024366884234595892, 'f105w': 0.008863392873279346, 'f125w': 0.008550667128846823, 'f140w': 0.010490592077764458, 'f160w': 0.006582638416409025}
+ID = np.arange(len(aper_flux['f435w'][z4_selection]))
+B = [round(aper_flux['f435w'][z4_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_flux['f435w'][z4_selection]))]
+B_err = [round(aper_err['f435w'][z4_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_err['f435w'][z4_selection]))]
+Bval_err = [str(B[i])+r'$\pm$'+str(B_err[i]) for i in range(len(B))]
+
+aper_t = QTable([ID, Bval_err], names=('ID', 'f435w (nJy)'))
+
+for f in all_filters[1:(len(all_filters))]:
+    band = [round(aper_flux[f][z4_selection][i]/nJy_to_es[f]) for i in range(len(aper_flux[f][z4_selection]))]
+    band_err = [round(aper_err[f][z4_selection][i]/nJy_to_es[f]) for i in range(len(aper_err[f][z4_selection]))]
+    val_err = [str(band[i])+r'$\pm$'+str(band_err[i]) for i in range(len(band))]
+    aper_t.add_column(val_err, name = f+' (nJy)')
+aper_t
+
+##### z = 6
+
+nJy_to_es = {'f435w': 0.005171303179169625, 'f606w': 0.011015393095414123, 'f775w': 0.005142804319487919, 'f814w': 0.0066619290022345385, 'f850lp': 0.0024366884234595892, 'f105w': 0.008863392873279346, 'f125w': 0.008550667128846823, 'f140w': 0.010490592077764458, 'f160w': 0.006582638416409025}
+ID = np.arange(len(aper_flux['f435w'][z6_selection]))
+B = [round(aper_flux['f435w'][z6_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_flux['f435w'][z6_selection]))]
+B_err = [round(aper_err['f435w'][z6_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_err['f435w'][z6_selection]))]
+Bval_err = [str(B[i])+r'$\pm$'+str(B_err[i]) for i in range(len(B))]
+
+aper_t2 = QTable([ID, Bval_err], names=('ID', 'f435w (nJy)'))
+
+for f in all_filters[1:(len(all_filters))]:
+    band = [round(aper_flux[f][z6_selection][i]/nJy_to_es[f]) for i in range(len(aper_flux[f][z6_selection]))]
+    band_err = [round(aper_err[f][z6_selection][i]/nJy_to_es[f]) for i in range(len(aper_err[f][z6_selection]))]
+    val_err = [str(band[i])+r'$\pm$'+str(band_err[i]) for i in range(len(band))]
+    aper_t2.add_column(val_err, name = f+' (nJy)')
+aper_t2
+ascii.write(aper_t2, 'aper_z6_table', format='latex', fast_writer=False)
+
+#### z= 8 
+
+nJy_to_es = {'f435w': 0.005171303179169625, 'f606w': 0.011015393095414123, 'f775w': 0.005142804319487919, 'f814w': 0.0066619290022345385, 'f850lp': 0.0024366884234595892, 'f105w': 0.008863392873279346, 'f125w': 0.008550667128846823, 'f140w': 0.010490592077764458, 'f160w': 0.006582638416409025}
+ID = np.arange(len(aper_flux['f435w'][z8_selection]))
+B = [round(aper_flux['f435w'][z8_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_flux['f435w'][z8_selection]))]
+B_err = [round(aper_err['f435w'][z8_selection][i]/nJy_to_es['f435w']) for i in range(len(aper_err['f435w'][z8_selection]))]
+Bval_err = [str(B[i])+r'$\pm$'+str(B_err[i]) for i in range(len(B))]
+
+aper_t3 = QTable([ID, Bval_err], names=('ID', 'f435w (nJy)'))
+
+for f in all_filters[1:(len(all_filters))]:
+    band = [round(aper_flux[f][z8_selection][i]/nJy_to_es[f]) for i in range(len(aper_flux[f][z8_selection]))]
+    band_err = [round(aper_err[f][z8_selection][i]/nJy_to_es[f]) for i in range(len(aper_err[f][z8_selection]))]
+    val_err = [str(band[i])+r'$\pm$'+str(band_err[i]) for i in range(len(band))]
+    aper_t3.add_column(val_err, name = f+' (nJy)')
+aper_t3
+ascii.write(aper_t3, 'aper_z8_table', format='latex', fast_writer=False)
