@@ -1,0 +1,36 @@
+#Extracting all Aperture data and storing in dictionaries
+aper_dic = {}
+aper_sn_dic = {}
+
+for f in all_filters:
+    aper_dic[f] = (hdf['photometry']['aper'][f]['flux'][:])/nJy_to_es[f]
+    aper_dic[f+'_err'] = (hdf['photometry']['aper'][f]['noise'][:])/nJy_to_es[f]
+    aper_sn_dic[f] = hdf['photometry']['aper'][f]['S/N'][:]
+
+
+#Extracting flux, noise and S/N through aperture size close to isophotal size.
+#Isophotal sizes
+iso_r = hdf['photometry']['iso']['source_radii']
+
+#Storing dictionaries
+aper_flux = {}
+aper_err = {}
+aper_sn = {}
+
+for f in all_filters:
+    arr_f = np.zeros((len(iso_r)))
+    arr_err = np.zeros((len(iso_r)))
+    arr_sn = np.zeros((len(iso_r)))
+    for i in range(len(iso_r)):
+        r = round(iso_r[i]) - 1 #array's start counting from 0 not 1.
+        if r < 20:
+            arr_f[i] = aper_dic[f][i,r]
+            arr_err[i] = aper_dic[f+'_err'][i,r]
+            arr_sn[i] = aper_sn_dic[f][i,r]
+        else:
+            arr_f[i] = aper_dic[f][i,19] #largest r is 20 but array's start counting from 0 not 1.
+            arr_err[i] = aper_dic[f+'_err'][i,19]
+            arr_f[i] = aper_sn_dic[f][i,19]
+    aper_flux[f] = arr_f
+    aper_err[f] = arr_err
+    aper_sn[f] = arr_sn
