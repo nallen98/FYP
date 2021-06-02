@@ -1,0 +1,37 @@
+fig, (ax1, ax2, ax3) = plt.subplots(1,3, figsize = (20,10))
+
+ax1.scatter(aper_SN7Y['IZ_Y'], aper_SN7Y['V_IZ'], marker = '.', color = 'grey')
+im1 = ax1.scatter(aper_z6['IZ_Y'], aper_z6['V_IZ'], marker = 'o', c = aper_z6['sn_Y'], cmap = 'plasma')
+ax1.set_xlim(-1,1)
+ax1.set_ylim(-0.5,2)
+ax1.set_xlabel(r'$IZ_{f814w} - Y_{f105w}$', fontsize = '15')
+ax1.set_ylabel(r'$V_{f606w} - IZ_{f814w}$', fontsize = '15')
+cbar1 = fig.colorbar(im1, ax = ax1, orientation="horizontal")
+cbar1.set_label('Y S/N')
+
+
+ax2.scatter(aper_SN7Y['Y_J'], aper_SN7Y['IZ_Y'], marker = '.', color = 'grey', label = 'Y S/N > 7')
+im2 = ax2.scatter(aper_z6['Y_J'], aper_z6['IZ_Y'], marker = 'o', c = aper_z6['sn_J'], cmap = 'plasma', label = 'z = 6 Candidates')
+ax2.set_xlim(-0.5,1)
+ax2.set_ylim(-1,3)
+ax2.set_ylabel(r'$IZ_{f814w} - Y_{f105w}$', fontsize = '15')
+ax2.set_xlabel(r'$Y_{f105w} - J_{f125w}$', fontsize = '15')
+ax2.legend(loc = 'upper right')
+ax2.axvline(0, ls = '--', c = 'k', alpha = 0.2)
+ax2.fill([-0.5,0,0.5,0.5,-0.5], [1.2,1.2,1.6,6.5,6.5], 'b', alpha=0.1, edgecolor='k')
+cbar2 = fig.colorbar(im2, ax = ax2, orientation="horizontal")
+cbar2.set_label('J S/N')
+
+
+ax3.scatter(aper_SN7Y['J_H'], aper_SN7Y['Y_J'], marker = '.', color = 'grey')
+im3 = ax3.scatter(aper_z6['J_H'], aper_z6['Y_J'], marker = 'o', c = aper_z6['sn_H'], cmap = 'plasma')
+ax3.set_xlim(-0.5,1)
+ax3.set_ylim(-0.5,1)
+ax3.set_xlabel(r'$J_{f125w} - H_{f160w}$', fontsize = '15')
+ax3.set_ylabel(r'$Y_{f105w} - J_{f125w}$', fontsize = '15')
+cbar3 = fig.colorbar(im3, ax =ax3, orientation="horizontal")
+cbar3.set_label('H S/N')
+
+plt.suptitle('Colour - Colour Plots for Redshift 6 Candidates', fontsize = '20')
+plt.savefig('Criteria_colorplots/aper_z6criteria_col-col.png')
+# plt.show()
